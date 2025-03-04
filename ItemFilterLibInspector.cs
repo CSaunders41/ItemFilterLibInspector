@@ -12,30 +12,30 @@ using ItemFilterLibrary;
 
 namespace ItemFilterLibInspector;
 
-public class TraderTab
-{
-    public List<CustomNPCItemData> Items { get; set; }
-
-    public override string ToString()
-    {
-        return $"{Items?.Count ?? 0}";
-    }
-}
-
-public class ItemContainer
-{
-    public List<ItemData> PlayerItems { get; set; }
-    public List<ItemData> InventoryItems { get; set; }
-    public List<CustomNPCItemData> RewardItems { get; set; }
-    public List<CustomNPCItemData> RitualItems { get; set; }
-    public List<ItemData> StashItems { get; set; }
-    public List<TraderTab> TraderTabs { get; set; }
-}
-
 public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorSettings>
 {
+    private readonly CachedValue<List<ItemData>> _cursorItems;
+
+    private readonly InventorySlotE[] _cursorSlot = [InventorySlotE.Cursor1];
+    private readonly InventorySlotE[] _inventorySlot = [InventorySlotE.MainInventory1];
     private readonly CachedValue<List<ItemData>> _invItems;
     private readonly CachedValue<List<ItemData>> _playerItems;
+
+    private readonly InventorySlotE[] _playerItemSlots =
+    [
+        InventorySlotE.Weapon1,
+        InventorySlotE.Offhand1,
+        InventorySlotE.Weapon2,
+        InventorySlotE.Offhand2,
+        InventorySlotE.BodyArmour1,
+        InventorySlotE.Helm1,
+        InventorySlotE.Gloves1,
+        InventorySlotE.Boots1,
+        InventorySlotE.Amulet1,
+        InventorySlotE.Ring1,
+        InventorySlotE.Ring2
+    ];
+
     private readonly CachedValue<List<CustomNPCItemData>> _rewardItems;
     private readonly CachedValue<List<CustomNPCItemData>> _ritualItems;
     private readonly CachedValue<List<ItemData>> _stashItems;
@@ -53,6 +53,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
         _stashItems = new TimeCache<List<ItemData>>(GetVisibleStashItems, 1000);
         _invItems = new TimeCache<List<ItemData>>(GetInventoryItems, 1000);
         _playerItems = new TimeCache<List<ItemData>>(GetPlayerItems, 1000);
+        _cursorItems = new TimeCache<List<ItemData>>(GetCursorItems, 1000);
     }
 
     public override bool Initialise()
@@ -85,6 +86,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
         var aggregateContainer = new ItemContainer
         {
             PlayerItems = _playerItems.Value,
+            CursorItems = _cursorItems.Value,
             InventoryItems = _invItems.Value,
             RewardItems = _rewardItems.Value,
             RitualItems = _ritualItems.Value,
@@ -155,40 +157,30 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
             .ToList();
     }
 
-    public List<ItemData> GetInventoryItems()
+
+    private List<ItemData> GetItemsFromSlots(IEnumerable<InventorySlotE> slots)
     {
         var serverData = GameController.Game.IngameState.Data.ServerData;
-        var invItems = serverData.PlayerInventories[0].Inventory.InventorySlotItems;
-        return invItems.Where(invItem => invItem != null && IsValidItem(invItem, item => item.Item, item => item.Address))
+
+        return slots.SelectMany(slot => serverData.PlayerInventories[(int)slot].Inventory.InventorySlotItems)
+            .Where(invItem => invItem != null && IsValidItem(invItem, item => item.Item, item => item.Address))
             .Select(invItem => new ItemData(invItem.Item, GameController))
             .ToList();
     }
 
+    public List<ItemData> GetInventoryItems()
+    {
+        return GetItemsFromSlots(_inventorySlot);
+    }
+
+    public List<ItemData> GetCursorItems()
+    {
+        return GetItemsFromSlots(_cursorSlot);
+    }
+
     public List<ItemData> GetPlayerItems()
     {
-        var slots = new List<InventorySlotE>
-        {
-            InventorySlotE.Weapon1,
-            InventorySlotE.Offhand1,
-            InventorySlotE.Weapon2,
-            InventorySlotE.Offhand2,
-            InventorySlotE.BodyArmour1,
-            InventorySlotE.Helm1,
-            InventorySlotE.Gloves1,
-            InventorySlotE.Boots1,
-            InventorySlotE.Amulet1,
-            InventorySlotE.Ring1,
-            InventorySlotE.Ring2
-        };
-
-        var serverData = GameController.Game.IngameState.Data.ServerData;
-
-        var items = slots.SelectMany(slot => serverData.PlayerInventories[(int)slot].Inventory.InventorySlotItems)
-            .Where(invItem => invItem != null && IsValidItem(invItem, item => item.Item, item => item.Address))
-            .Select(invItem => new ItemData(invItem.Item, GameController))
-            .ToList();
-
-        return items;
+        return GetItemsFromSlots(_playerItemSlots);
     }
 
     public List<ItemData> GetVisibleStashItems()
