@@ -43,6 +43,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
     private PurchaseWindow _purchaseWindow;
     private PurchaseWindow _purchaseWindowHideout;
+    private bool _showItemCollection;
 
     public ItemFilterLibInspector()
     {
@@ -58,6 +59,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
     public override bool Initialise()
     {
+
         Input.RegisterKey(Settings.Hotkey.Value);
         Settings.Hotkey.OnValueChanged += () => { Input.RegisterKey(Settings.Hotkey.Value); };
 
@@ -71,7 +73,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
     public override Job Tick()
     {
         if (Settings.Hotkey.PressedOnce())
-            Settings.ShowItemCollection.Value = !Settings.ShowItemCollection.Value;
+            _showItemCollection = !_showItemCollection;
 
         _purchaseWindowHideout = GameController.Game.IngameState.IngameUi.PurchaseWindowHideout;
         _purchaseWindow = GameController.Game.IngameState.IngameUi.PurchaseWindow;
@@ -80,7 +82,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
     public override void Render()
     {
-        if (!Settings.ShowItemCollection)
+        if (!_showItemCollection)
             return;
 
         var aggregateContainer = new ItemContainer
