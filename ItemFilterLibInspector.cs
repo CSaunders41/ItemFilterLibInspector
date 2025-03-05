@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ExileCore;
+using ExileCore.PoEMemory;
 using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.Elements.InventoryElements;
@@ -44,6 +45,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
     private PurchaseWindow _purchaseWindow;
     private PurchaseWindow _purchaseWindowHideout;
     private bool _showItemCollection;
+    private ItemData _storedHoverItem;
 
     public ItemFilterLibInspector()
     {
@@ -57,11 +59,15 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
         _cursorItems = new TimeCache<List<ItemData>>(GetCursorItems, 1000);
     }
 
+    private Element UIHoverWithFallback =>
+        GameController.IngameState.UIHover switch { null or { Address: 0 } => GameController.IngameState.UIHoverElement, var s => s };
+
     public override bool Initialise()
     {
-
-        Input.RegisterKey(Settings.Hotkey.Value);
-        Settings.Hotkey.OnValueChanged += () => { Input.RegisterKey(Settings.Hotkey.Value); };
+        Input.RegisterKey(Settings.ToggleInspectorWindow.Value);
+        Input.RegisterKey(Settings.SaveItemSnapshot.Value);
+        Settings.ToggleInspectorWindow.OnValueChanged += () => { Input.RegisterKey(Settings.ToggleInspectorWindow.Value); };
+        Settings.SaveItemSnapshot.OnValueChanged += () => { Input.RegisterKey(Settings.SaveItemSnapshot.Value); };
 
         return true;
     }
@@ -72,11 +78,14 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
     public override Job Tick()
     {
-        if (Settings.Hotkey.PressedOnce())
+        if (Settings.ToggleInspectorWindow.PressedOnce())
             _showItemCollection = !_showItemCollection;
 
         _purchaseWindowHideout = GameController.Game.IngameState.IngameUi.PurchaseWindowHideout;
         _purchaseWindow = GameController.Game.IngameState.IngameUi.PurchaseWindow;
+
+        if (Settings.SaveItemSnapshot.PressedOnce())
+            GetHoveredItem();
         return null;
     }
 
@@ -87,6 +96,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
         var aggregateContainer = new ItemContainer
         {
+            HoveredSnapshotItem = _storedHoverItem,
             PlayerItems = _playerItems.Value,
             CursorItems = _cursorItems.Value,
             InventoryItems = _invItems.Value,
@@ -97,6 +107,14 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
         };
 
         GameController.InspectObject(aggregateContainer, "Collection of IFL Items");
+    }
+
+    private void GetHoveredItem()
+    {
+        var ingameStateUiHover = UIHoverWithFallback;
+        var hoverItemIcon = ingameStateUiHover.AsObject<HoverItemIcon>();
+        if (IsValidItem(hoverItemIcon.Item, e => e, e => e.Address))
+            _storedHoverItem = new ItemData(hoverItemIcon.Item, GameController);
     }
 
     private List<CustomNPCItemData> GetRewardItems()
