@@ -50,13 +50,13 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
     public ItemFilterLibInspector()
     {
         Name = "IFL Inspector";
-        _storedTraderTabs = new TimeCache<List<TraderTab>>(CacheUtils.RememberLastValue<List<TraderTab>>(UpdateCurrentTraderTabs), 1000);
-        _rewardItems = new TimeCache<List<CustomNPCItemData>>(GetRewardItems, 1000);
-        _ritualItems = new TimeCache<List<CustomNPCItemData>>(GetRitualItems, 1000);
-        _stashItems = new TimeCache<List<ItemData>>(GetVisibleStashItems, 1000);
-        _invItems = new TimeCache<List<ItemData>>(GetInventoryItems, 1000);
-        _playerItems = new TimeCache<List<ItemData>>(GetPlayerItems, 1000);
-        _cursorItems = new TimeCache<List<ItemData>>(GetCursorItems, 1000);
+        _storedTraderTabs = new TimeCache<List<TraderTab>>(() => !_showItemCollection ? [] : CacheUtils.RememberLastValue<List<TraderTab>>(UpdateCurrentTraderTabs)(), 1000);
+        _rewardItems = new TimeCache<List<CustomNPCItemData>>(() => !_showItemCollection ? [] : GetRewardItems(), 1000);
+        _ritualItems = new TimeCache<List<CustomNPCItemData>>(() => !_showItemCollection ? [] : GetRitualItems(), 1000);
+        _stashItems = new TimeCache<List<ItemData>>(() => !_showItemCollection ? [] : GetVisibleStashItems(), 1000);
+        _invItems = new TimeCache<List<ItemData>>(() => !_showItemCollection ? [] : GetInventoryItems(), 1000);
+        _playerItems = new TimeCache<List<ItemData>>(() => !_showItemCollection ? [] : GetPlayerItems(), 1000);
+        _cursorItems = new TimeCache<List<ItemData>>(() => !_showItemCollection ? [] : GetCursorItems(), 1000);
     }
 
     private Element UIHoverWithFallback =>
