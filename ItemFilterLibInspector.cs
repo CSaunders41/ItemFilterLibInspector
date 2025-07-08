@@ -7,6 +7,7 @@ using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.Elements.InventoryElements;
 using ExileCore.PoEMemory.MemoryObjects;
+using ExileCore.PoEMemory.MemoryObjects.Inventory;
 using ExileCore.Shared.Cache;
 using ExileCore.Shared.Enums;
 using ItemFilterLibrary;
@@ -425,7 +426,7 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
 
                             var visibleValidUiItems = uiInventory?.Inventory?.VisibleInventoryItems?
                                 .Where(x => x?.Item?.Path != null && IsValidItem(x, item => item.Item, item => item.Address))
-                                .ToList() ?? new List<InventoryItemIcon>();
+                                .ToList() ?? new List<NormalInventoryItem>();
 
                             var items = new List<CustomNPCItemData>();
 
@@ -488,12 +489,12 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
                     try
                     {
                         var inventory = serverData.PlayerInventories[(int)slot]?.Inventory;
-                        return inventory?.InventorySlotItems ?? Enumerable.Empty<InventorySlotItem>();
+                        return inventory?.InventorySlotItems ?? Enumerable.Empty<ServerInventory.InventSlotItem>();
                     }
                     catch (Exception ex)
                     {
                         LogError($"Error accessing inventory slot {slot}: {ex.Message}");
-                        return Enumerable.Empty<InventorySlotItem>();
+                        return Enumerable.Empty<ServerInventory.InventSlotItem>();
                     }
                 })
                 .Where(invItem => invItem != null && IsValidItem(invItem, item => item.Item, item => item.Address))
