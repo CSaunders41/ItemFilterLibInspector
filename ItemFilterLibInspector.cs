@@ -7,7 +7,6 @@ using ExileCore.PoEMemory.Components;
 using ExileCore.PoEMemory.Elements;
 using ExileCore.PoEMemory.Elements.InventoryElements;
 using ExileCore.PoEMemory.MemoryObjects;
-using ExileCore.PoEMemory.MemoryObjects.Inventory;
 using ExileCore.Shared.Cache;
 using ExileCore.Shared.Enums;
 using ItemFilterLibrary;
@@ -489,12 +488,12 @@ public class ItemFilterLibInspector : BaseSettingsPlugin<ItemFilterLibInspectorS
                     try
                     {
                         var inventory = serverData.PlayerInventories[(int)slot]?.Inventory;
-                        return inventory?.InventorySlotItems ?? Enumerable.Empty<ServerInventory.InventSlotItem>();
+                        return inventory?.InventorySlotItems ?? [];
                     }
                     catch (Exception ex)
                     {
                         LogError($"Error accessing inventory slot {slot}: {ex.Message}");
-                        return Enumerable.Empty<ServerInventory.InventSlotItem>();
+                        return [];
                     }
                 })
                 .Where(invItem => invItem != null && IsValidItem(invItem, item => item.Item, item => item.Address))
